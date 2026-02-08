@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    <link rel="stylesheet" href="./style.css">
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titan Protocol | Official Airdrop</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    
+    <style>
+        /* ================= CSS DESIGN ================= */
+        :root {
+            --primary: #00ff88;
+            --secondary: #00b8ff;
+            --bg-dark: #050505;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            scroll-behavior: smooth; /* Smooth scrolling for navigation */
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        /* অ্যানিমেটেড ব্যাকগ্রাউন্ড */
+        .background-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 50%, rgba(0, 255, 136, 0.05), transparent 70%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- NAVIGATION BAR --- */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #888;
+            font-weight: 500;
+            transition: 0.3s;
+            font-size: 16px;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            color: var(--primary);
+        }
+
+        .btn-connect {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 12px 25px;
+            color: #000;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-connect:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        /* --- HERO SECTION (MAIN) --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0 20px;
+            padding-top: 80px; /* Navbar space */
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            line-height: 1.2;
+            margin-bottom: 20px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            color: #888;
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 30px;
+            border: none;
+            background: var(--primary);
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+
+        .btn-outline {
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 30px;
+            border: 1px solid var(--secondary);
+            background: transparent;
+            color: var(--secondary);
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-outline:hover {
+            background: rgba(0, 184, 255, 0.1);
+        }
+
+        /* --- ROADMAP SECTION --- */
+        .roadmap-section {
+            padding: 100px 20px;
+            background: #0a0a0a;
+            position: relative;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 60px;
+        }
+
+        .timeline {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Vertical Line */
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            background: #333;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -1px;
+        }
+
+        .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+            box-sizing: border-box;
+        }
+
+        .timeline-item.left { left: 0; text-align: right; }
+        .timeline-item.right { left: 50%; text-align: left; }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            background-color: var(--bg-dark);
+            border: 2px solid var(--primary);
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .timeline-item.right::after {
+            left: -10px;
+        }
+
+        .content {
+            padding: 20px 30px;
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 12px;
+            position: relative;
+            transition: 0.3s;
+        }
+
+        .content:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .content h3 { color: var(--primary); margin-bottom: 10px; }
+        .content p { color: #aaa; font-size: 14px; margin-bottom: 5px; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            border-top: 1px solid #222;
+            color: #555;
+            font-size: 14px;
+        }
+
+        /* Mobile Responsive */
+        @media screen and (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .timeline::after { left: 31px; }
+            .timeline-item { width: 100%; padding-left: 70px; padding-right: 25px; }
+            .timeline-item.left, .timeline-item.right { left: 0; text-align: left; }
+            .timeline-item.left::after, .timeline-item.right::after { left: 21px; }
+            .nav-links { display: none; } /* Simplified for mobile */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="background-glow"></div>
+
+    <nav class="navbar">
+        <div class="logo">💎 TITAN PROTOCOL</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#roadmap">Roadmap</a></li>
+            <li><a href="#">Whitepaper</a></li>
+        </ul>
+        <button id="connectBtn" class="btn-connect" onclick="connectWallet()">Connect Wallet</button>
+    </nav>
+
+    <header id="home" class="hero">
+        <div class="hero-content">
+            <h1>The Future of <br><span class="gradient-text">Decentralized Finance</span></h1>
+            <p>Titan Protocol is the ultimate solution for cross-chain liquidity management. Claim your exclusive airdrop now.</p>
+            
+            <div class="cta-buttons">
+                <button class="btn-primary" onclick="claimAirdrop()">Claim Airdrop 🚀</button>
+                <button class="btn-outline" onclick="document.getElementById('roadmap').scrollIntoView()">View Roadmap</button>
+            </div>
+            <p id="statusMsg" style="margin-top: 20px; color: #ff4444; font-size: 14px;"></p>
+        </div>
+    </header>
+
+    <section id="roadmap" class="roadmap-section">
+        <h2 class="section-title">Strategic <span class="gradient-text">Roadmap</span></h2>
+        
+        <div class="timeline">
+            <div class="timeline-item left">
+                <div class="content">
+                    <h3>Phase 1: Inception</h3>
+                    <p>✅ Concept & Whitepaper</p>
+                    <p>✅ Smart Contract Audit</p>
+                    <p>✅ Community Launch</p>
+                </div>
+            </div>
+            <div class="timeline-item right">
+                <div class="content">
+                    <h3>Phase 2: Growth (Current)</h3>
+                    <p>🔄 Titan Airdrop Live</p>
+                    <p>🔜 PancakeSwap Listing</p>
+                    <p>🔜 Staking Dashboard</p>
+                </div>
+            </div>
+            <div class="timeline-item left">
+                <div class="content">
+                    <h3>Phase 3: Expansion</h3>
+                    <p>🔒 CEX Listing (Binance/Kucoin)</p>
+                    <p>🔒 Governance DAO</p>
+                    <p>🔒 Cross-Chain Bridge</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2024 Titan Protocol Foundation. All rights reserved.</p>
+    </footer>
+
+    <script>
+        /* ================= SAFE WALLET CONNECTION ================= */
+        // এই ফাংশনটি শুধুমাত্র ওয়ালেট কানেক্ট করে অ্যাড্রেস দেখাবে।
+        // এটি কোনো ট্রানজেকশন বা অ্যাপ্রুভাল চাইবে না।
+
+        async function connectWallet() {
+            const btn = document.getElementById("connectBtn");
+            const status = document.getElementById("statusMsg");
+
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    // 1. Connection Request
+                    const provider = new ethers.providers.Web3Provider(window.ethereum);
+                    await provider.send("eth_requestAccounts", []);
+                    
+                    const signer = provider.getSigner();
+                    const address = await signer.getAddress();
+                    
+                    // 2. UI Update
+                    btn.innerText = address.slice(0, 6) + "..." + address.slice(-4);
+                    status.innerText = "✅ Wallet Connected Successfully!";
+                    status.style.color = "#00ff88";
+                    
+                    console.log("Connected:", address);
+
+                } catch (error) {
+                    console.error("Connection Error:", error);
+                    status.innerText = "Connection Failed. Please try again.";
+                }
+            } else {
+                alert("Please Install MetaMask!");
+            }
+        }
+
+        async function claimAirdrop() {
+            // এখানে আপনি আপনার ক্লেইম লজিক বা এলিজিবিলিটি চেক বসাতে পারেন।
+            // নিরাপদ প্র্যাকটিস হিসেবে প্রথমে ওয়ালেট কানেক্ট করা চেক করুন।
+            const btn = document.getElementById("connectBtn");
+            if(btn.innerText === "Connect Wallet") {
+                await connectWallet();
+            } else {
+                alert("Coming Soon! Airdrop distribution starts in Phase 2.");
+            }
+        }
+    </script>
+</body>
+</html>
+    <script  src="./script.js"></script>
+
+  </body>
+  
+</html>
